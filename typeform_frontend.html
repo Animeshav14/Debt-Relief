@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debt Relief Simulator - Typeform Experience</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 40px 60px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: white;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .step-counter {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .form-container {
+            flex: 1;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            margin-top: 40px;
+            padding: 60px;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .step {
+            display: none;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .step-title {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+
+        .step-subtitle {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 40px;
+            font-weight: 400;
+        }
+
+        .form-group {
+            margin-bottom: 30px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 18px 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #fafbfc;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .debt-item {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .debt-item h4 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+
+        .debt-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .add-debt-btn, .remove-debt-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .add-debt-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+
+        .remove-debt-btn {
+            background: #dc3545;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .remove-debt-btn:hover {
+            background: #c82333;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 18px 40px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #666;
+            border: 2px solid #e1e5e9;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-screen {
+            display: none;
+            text-align: center;
+            padding: 80px 0;
+        }
+
+        .loading-screen.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 30px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.5em;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .loading-subtext {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .results-container {
+            display: none;
+        }
+
+        .results-container.active {
+            display: block;
+        }
+
+        .trajectory-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .trajectory-title {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .trajectory-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .metric {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .metric-label {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .plans-container {
+            margin-top: 40px;
+        }
+
+        .plans-title {
+            font-size: 2em;
+            font-weight: 700;
+            color: #333;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .plan-card {
+            background: white;
+            border: 3px solid #e1e5e9;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .plan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .plan-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+        }
+
+        .plan-card.easy {
+            border-color: #28a745;
+        }
+
+        .plan-card.middle {
+            border-color: #ffc107;
+        }
+
+        .plan-card.hardcore {
+            border-color: #dc3545;
+        }
+
+        .plan-emoji {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .plan-name {
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .plan-months {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .plan-months-label {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+
+        .plan-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .plan-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .plan-metric {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .plan-metric-value {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .plan-metric-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .select-plan-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .select-plan-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #dc3545;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0;
+            }
+
+            .header {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .form-container {
+                padding: 30px 20px;
+                border-radius: 15px 15px 0 0;
+            }
+
+            .debt-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-container {
+                flex-direction: column;
+            }
+
+            .plans-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .trajectory-metrics {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Debt Relief Simulator</h1>
+            <p>Get personalized debt payoff plans in minutes</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="step-counter">
+                <span id="currentStep">1</span> of <span id="totalSteps">6</span>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <!-- Step 1: Financial Information -->
+            <div class="step active" id="step1">
+                <h2 class="step-title">Let's start with your financial situation</h2>
+                <p class="step-subtitle">This helps us understand your current financial capacity</p>
+                
+                <div class="form-group">
+                    <label for="monthlyIncome">What's your monthly income?</label>
+                    <input type="number" id="monthlyIncome" placeholder="e.g., 5000" required min="0" step="0.01">
+                </div>
+
+                <div class="form-group">
+                    <label for="currentBalance">How much do you have in savings?</label>
+                    <input type="number" id="currentBalance" placeholder="e.g., 2000" required min="0" step="0.01">
+                </div>
+
+                <div class="form-group">
+                    <label for="monthlyExpenses">What are your monthly expenses?</label>
+                    <input type="number" id="monthlyExpenses" placeholder="e.g., 3000" required min="0" step="0.01">
+                </div>
+
+                <div class="btn-container">
+                    <div></div>
+                    <button class="btn btn-primary" onclick="nextStep()">Continue →</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Medical Debts -->
+            <div class="step" id="step2">
+                <h2 class="step-title">Tell us about your medical debts</h2>
+                <p class="step-subtitle">Add each medical debt you need help with</p>
+                
+                <div id="medicalDebts">
+                    <div class="debt-item" data-debt-index="0">
+                        <h4>Medical Debt #1</h4>
+                        <div class="debt-grid">
+                            <div class="form-group">
+                                <label>What's this debt for?</label>
+                                <input type="text" name="debtName" placeholder="e.g., Emergency Room Visit" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Provider/Hospital name</label>
+                                <input type="text" name="providerName" placeholder="e.g., General Hospital">
+                            </div>
+                            <div class="form-group">
+                                <label>How much do you owe?</label>
+                                <input type="number" name="balance" placeholder="e.g., 2500" required min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>Interest rate (%)</label>
+                                <input type="number" name="interestRate" placeholder="0" min="0" step="0.01" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Minimum payment per month</label>
+                                <input type="number" name="minimumPayment" placeholder="e.g., 50" required min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>How much do you currently pay monthly?</label>
+                                <input type="number" name="currentPayment" placeholder="e.g., 75" required min="0" step="0.01">
+                                <small style="color: #666; margin-top: 5px; display: block;">This is the actual amount you pay each month towards this debt</small>
+                            </div>
+                            <div class="form-group">
+                                <label>When was the service?</label>
+                                <input type="date" name="serviceDate">
+                            </div>
+                            <div class="form-group">
+                                <label>Insurance coverage amount</label>
+                                <input type="number" name="insuranceCoverage" placeholder="0" min="0" step="0.01" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Payment plan available?</label>
+                                <select name="paymentPlanAvailable">
+                                    <option value="false">No</option>
+                                    <option value="true">Yes</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="add-debt-btn" onclick="addDebt()">+ Add Another Medical Debt</button>
+
+                <div class="btn-container">
+                    <button class="btn btn-secondary" onclick="prevStep()">← Back</button>
+                    <button class="btn btn-primary" onclick="nextStep()">Continue →</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Goals -->
+            <div class="step" id="step3">
+                <h2 class="step-title">What's your goal?</h2>
+                <p class="step-subtitle">How quickly would you like to be debt-free?</p>
+                
+                <div class="form-group">
+                    <label for="targetPayoffMonths">Target payoff time (months)</label>
+                    <input type="number" id="targetPayoffMonths" placeholder="24" min="1" value="24">
+                    <small style="color: #666; margin-top: 5px; display: block;">This helps us create realistic plans for you</small>
+                </div>
+
+                <div class="btn-container">
+                    <button class="btn btn-secondary" onclick="prevStep()">← Back</button>
+                    <button class="btn btn-primary" onclick="analyzeTrajectory()">Analyze My Current Trajectory</button>
+                </div>
+            </div>
+
+            <!-- Loading Screen -->
+            <div class="loading-screen" id="loadingScreen">
+                <div class="spinner"></div>
+                <div class="loading-text">Analyzing your debt...</div>
+                <div class="loading-subtext">We're calculating your current trajectory and creating personalized plans</div>
+            </div>
+
+            <!-- Results: Current Trajectory -->
+            <div class="results-container" id="trajectoryResults">
+                <div class="trajectory-card">
+                    <h2 class="trajectory-title">Your Current Debt Trajectory</h2>
+                    <div id="trajectoryContent"></div>
+                </div>
+
+                <div class="btn-container">
+                    <button class="btn btn-secondary" onclick="goBackToForm()">← Back to Form</button>
+                    <button class="btn btn-primary" onclick="showPayoffPlans()">See My Plan Options →</button>
+                </div>
+            </div>
+
+            <!-- Results: Payoff Plans -->
+            <div class="results-container" id="plansResults">
+                <h2 class="plans-title">Choose Your Payoff Plan</h2>
+                <div class="plans-grid" id="plansGrid">
+                    <!-- Plans will be populated here -->
+                </div>
+
+                <div class="btn-container">
+                    <button class="btn btn-secondary" onclick="goBackToTrajectory()">← Back to Trajectory</button>
+                    <button class="btn btn-primary" id="selectPlanBtn" onclick="selectPlan()" style="display: none;">Select This Plan</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="error" id="errorMessage"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5001/api';
+        let currentStep = 1;
+        const totalSteps = 6;
+        let debtIndex = 1;
+        let currentFormData = null;
+        let selectedPlan = null;
+
+        // Update progress bar
+        function updateProgress() {
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('currentStep').textContent = currentStep;
+            document.getElementById('totalSteps').textContent = totalSteps;
+        }
+
+        // Step navigation
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                document.getElementById(`step${currentStep}`).classList.remove('active');
+                currentStep++;
+                document.getElementById(`step${currentStep}`).classList.add('active');
+                updateProgress();
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                document.getElementById(`step${currentStep}`).classList.remove('active');
+                currentStep--;
+                document.getElementById(`step${currentStep}`).classList.add('active');
+                updateProgress();
+            }
+        }
+
+        // Add/remove debt functionality
+        function addDebt() {
+            const debtsContainer = document.getElementById('medicalDebts');
+            const newDebt = document.createElement('div');
+            newDebt.className = 'debt-item';
+            newDebt.setAttribute('data-debt-index', debtIndex);
+            
+            newDebt.innerHTML = `
+                <h4>Medical Debt #${debtIndex + 1}</h4>
+                <button class="remove-debt-btn" onclick="removeDebt(${debtIndex})">×</button>
+                <div class="debt-grid">
+                    <div class="form-group">
+                        <label>What's this debt for?</label>
+                        <input type="text" name="debtName" placeholder="e.g., Emergency Room Visit" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Provider/Hospital name</label>
+                        <input type="text" name="providerName" placeholder="e.g., General Hospital">
+                    </div>
+                    <div class="form-group">
+                        <label>How much do you owe?</label>
+                        <input type="number" name="balance" placeholder="e.g., 2500" required min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Interest rate (%)</label>
+                        <input type="number" name="interestRate" placeholder="0" min="0" step="0.01" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Minimum payment per month</label>
+                        <input type="number" name="minimumPayment" placeholder="e.g., 50" required min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>How much do you currently pay monthly?</label>
+                        <input type="number" name="currentPayment" placeholder="e.g., 75" required min="0" step="0.01">
+                        <small style="color: #666; margin-top: 5px; display: block;">This is the actual amount you pay each month towards this debt</small>
+                    </div>
+                    <div class="form-group">
+                        <label>When was the service?</label>
+                        <input type="date" name="serviceDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Insurance coverage amount</label>
+                        <input type="number" name="insuranceCoverage" placeholder="0" min="0" step="0.01" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Payment plan available?</label>
+                        <select name="paymentPlanAvailable">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            
+            debtsContainer.appendChild(newDebt);
+            debtIndex++;
+        }
+
+        function removeDebt(index) {
+            const debtItem = document.querySelector(`[data-debt-index="${index}"]`);
+            if (debtItem) {
+                debtItem.remove();
+            }
+        }
+
+        // Get form data
+        function getFormData() {
+            const formData = {
+                financialData: {
+                    monthly_income: parseFloat(document.getElementById('monthlyIncome').value),
+                    current_balance: parseFloat(document.getElementById('currentBalance').value),
+                    monthly_expenses: parseFloat(document.getElementById('monthlyExpenses').value)
+                },
+                medicalDebts: [],
+                goals: {
+                    target_payoff_months: parseInt(document.getElementById('targetPayoffMonths').value)
+                },
+                currentIncomeSources: []
+            };
+
+            // Collect medical debts
+            const debtItems = document.querySelectorAll('.debt-item');
+            debtItems.forEach(item => {
+                const debt = {
+                    name: item.querySelector('input[name="debtName"]').value,
+                    balance: parseFloat(item.querySelector('input[name="balance"]').value),
+                    interest_rate: parseFloat(item.querySelector('input[name="interestRate"]').value),
+                    minimum_payment: parseFloat(item.querySelector('input[name="minimumPayment"]').value),
+                    current_payment: parseFloat(item.querySelector('input[name="currentPayment"]').value),
+                    provider_name: item.querySelector('input[name="providerName"]').value || null,
+                    service_date: item.querySelector('input[name="serviceDate"]').value || null,
+                    insurance_coverage: parseFloat(item.querySelector('input[name="insuranceCoverage"]').value) || 0,
+                    payment_plan_available: item.querySelector('select[name="paymentPlanAvailable"]').value === 'true'
+                };
+                formData.medicalDebts.push(debt);
+            });
+
+            return formData;
+        }
+
+        // Show/hide loading
+        function showLoading() {
+            document.getElementById('loadingScreen').classList.add('active');
+            hideError();
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingScreen').classList.remove('active');
+        }
+
+        // Error handling
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.remove('show');
+        }
+
+        // Analyze trajectory
+        async function analyzeTrajectory() {
+            showLoading();
+            
+            try {
+                const formData = getFormData();
+                currentFormData = formData;
+                
+                const response = await fetch(`${API_BASE_URL}/medical/current-trajectory`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayTrajectory(result.data);
+                    // Hide form and show trajectory
+                    document.getElementById('step3').classList.remove('active');
+                    document.getElementById('trajectoryResults').classList.add('active');
+                } else {
+                    showError(result.error || 'An error occurred during analysis');
+                }
+            } catch (error) {
+                showError('Failed to connect to the server. Make sure the backend is running on port 5001.');
+                console.error('Error:', error);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Display trajectory results
+        function displayTrajectory(data) {
+            const trajectoryContent = document.getElementById('trajectoryContent');
+            
+            let html = '';
+            
+            // Current Trajectory Timeline
+            if (data.trajectory_timeline) {
+                const timeline = data.trajectory_timeline;
+                html += `
+                    <div class="trajectory-metrics">
+                        <div class="metric">
+                            <div class="metric-value">${formatMonthsWithYears(timeline.months_to_payoff)}</div>
+                            <div class="metric-label">Months to Payoff</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">$${timeline.total_interest_paid.toLocaleString()}</div>
+                            <div class="metric-label">Total Interest</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">$${timeline.total_amount_paid.toLocaleString()}</div>
+                            <div class="metric-label">Total Amount Paid</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${timeline.debt_free_date}</div>
+                            <div class="metric-label">Debt-Free Date</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 30px; text-align: center; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px;">
+                        <h3 style="margin-bottom: 15px; font-size: 1.3em;">Your Current Payment Plan</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 400px; margin: 0 auto;">
+                            <div>
+                                <div style="font-size: 1.5em; font-weight: 600;">$${timeline.current_monthly_payment.toLocaleString()}</div>
+                                <div style="opacity: 0.9;">Current Monthly Payment</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 1.5em; font-weight: 600;">+$${timeline.vs_minimum_payment.toLocaleString()}</div>
+                                <div style="opacity: 0.9;">Above Minimum</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            trajectoryContent.innerHTML = html;
+        }
+
+        // Show payoff plans
+        async function showPayoffPlans() {
+            if (!currentFormData) {
+                showError('No form data available. Please submit the form first.');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/medical/simulate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(currentFormData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayPlans(result.data);
+                    // Hide trajectory and show plans
+                    document.getElementById('trajectoryResults').classList.remove('active');
+                    document.getElementById('plansResults').classList.add('active');
+                } else {
+                    showError(result.error || 'An error occurred while generating plans');
+                }
+            } catch (error) {
+                showError('Failed to connect to the server. Make sure the backend is running on port 5001.');
+                console.error('Error:', error);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Display plans
+        function displayPlans(data) {
+            const plansGrid = document.getElementById('plansGrid');
+            
+            const plans = [
+                { key: 'easy_plan', class: 'easy', emoji: '🐌', name: 'Easy Plan' },
+                { key: 'middle_plan', class: 'middle', emoji: '⚖️', name: 'Balanced Plan' },
+                { key: 'hardcore_plan', class: 'hardcore', emoji: '🚀', name: 'Aggressive Plan' }
+            ];
+            
+            let html = '';
+            
+            plans.forEach(plan => {
+                if (data[plan.key]) {
+                    const planData = data[plan.key];
+                    html += `
+                        <div class="plan-card ${plan.class}" onclick="selectPlanCard('${plan.key}', this)">
+                            <div class="plan-emoji">${plan.emoji}</div>
+                            <div class="plan-name">${plan.name}</div>
+                            <div class="plan-months">${formatMonthsWithYears(planData.estimated_months)}</div>
+                            <div class="plan-months-label">months to payoff</div>
+                            <div class="plan-description">${planData.description}</div>
+                            <div class="plan-metrics">
+                                <div class="plan-metric">
+                                    <div class="plan-metric-value">$${planData.monthly_payment}</div>
+                                    <div class="plan-metric-label">Monthly Payment</div>
+                                </div>
+                                <div class="plan-metric">
+                                    <div class="plan-metric-value">${planData.difficulty}</div>
+                                    <div class="plan-metric-label">Difficulty</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            plansGrid.innerHTML = html;
+        }
+
+        // Select plan card
+        function selectPlanCard(planKey, element) {
+            // Remove previous selection
+            document.querySelectorAll('.plan-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Add selection to clicked card
+            element.classList.add('selected');
+            selectedPlan = planKey;
+            
+            // Show select button
+            document.getElementById('selectPlanBtn').style.display = 'block';
+        }
+
+        // Select plan
+        function selectPlan() {
+            if (selectedPlan) {
+                alert(`You selected the ${selectedPlan.replace('_', ' ')}! This would typically take you to a detailed plan view or next steps.`);
+            }
+        }
+
+        // Navigation functions
+        function goBackToForm() {
+            document.getElementById('trajectoryResults').classList.remove('active');
+            document.getElementById('step3').classList.add('active');
+        }
+
+        function goBackToTrajectory() {
+            document.getElementById('plansResults').classList.remove('active');
+            document.getElementById('trajectoryResults').classList.add('active');
+        }
+
+        // Helper function to format months with years
+        function formatMonthsWithYears(months) {
+            if (months === 'N/A' || months === null || months === undefined) {
+                return 'N/A';
+            }
+            
+            const numMonths = parseInt(months);
+            
+            // Handle cases where debt will never be paid off (theoretical never)
+            if (numMonths >= 99999) {
+                return 'Never';
+            }
+            
+            // Handle the specific case of 9999 months (capped calculation)
+            if (numMonths === 9999) {
+                return '80+ years';
+            }
+            
+            // Handle very large numbers (over 50 years)
+            if (numMonths > 600) {
+                const years = Math.round(numMonths / 12);
+                return `${years}+ years`;
+            }
+            
+            // Handle normal cases
+            if (numMonths > 14) {
+                const years = (numMonths / 12).toFixed(1);
+                return `${numMonths} (${years}y)`;
+            }
+            return numMonths.toString();
+        }
+
+        // Initialize
+        updateProgress();
+    </script>
+</body>
+</html>

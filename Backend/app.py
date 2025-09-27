@@ -7,6 +7,7 @@ import os
 
 # Import routes
 from routes.simulation import simulation_bp
+from routes.medical_simulation import medical_simulation_bp
 
 # Load environment variables
 load_dotenv()
@@ -17,6 +18,7 @@ CORS(app)
 
 # Register blueprints (routes)
 app.register_blueprint(simulation_bp, url_prefix='/api')
+app.register_blueprint(medical_simulation_bp, url_prefix='/api')
 
 # Health check endpoint
 @app.route('/api/health', methods=['GET'])
