@@ -380,6 +380,75 @@
             border-color: #dc3545;
         }
 
+        .plan-card.target-plan {
+            border-color: #667eea;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .plan-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .plan-details h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-row.highlight {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ffeaa7;
+            font-weight: 600;
+        }
+
+        .recommendations {
+            margin-top: 20px;
+        }
+
+        .recommendations h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .recommendations ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .recommendations li {
+            background: #e8f4fd;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .plan-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
         .plan-emoji {
             font-size: 3em;
             margin-bottom: 20px;
@@ -529,7 +598,7 @@
                 <div class="progress-fill" id="progressFill"></div>
             </div>
             <div class="step-counter">
-                <span id="currentStep">1</span> of <span id="totalSteps">6</span>
+                <span id="currentStep">1</span> of <span id="totalSteps">5</span>
             </div>
         </div>
 
@@ -602,13 +671,6 @@
                                 <label>Insurance coverage amount</label>
                                 <input type="number" name="insuranceCoverage" placeholder="0" min="0" step="0.01" value="0">
                             </div>
-                            <div class="form-group">
-                                <label>Payment plan available?</label>
-                                <select name="paymentPlanAvailable">
-                                    <option value="false">No</option>
-                                    <option value="true">Yes</option>
-                                </select>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -660,14 +722,14 @@
 
             <!-- Results: Payoff Plans -->
             <div class="results-container" id="plansResults">
-                <h2 class="plans-title">Choose Your Payoff Plan</h2>
+                <h2 class="plans-title">Your Personalized Payoff Plan</h2>
                 <div class="plans-grid" id="plansGrid">
                     <!-- Plans will be populated here -->
                 </div>
 
                 <div class="btn-container">
                     <button class="btn btn-secondary" onclick="goBackToTrajectory()">← Back to Trajectory</button>
-                    <button class="btn btn-primary" id="selectPlanBtn" onclick="selectPlan()" style="display: none;">Select This Plan</button>
+                    <button class="btn btn-primary" id="selectPlanBtn" onclick="selectPlan()" style="display: none;">Accept This Plan</button>
                 </div>
             </div>
         </div>
@@ -678,14 +740,15 @@
     <script>
         const API_BASE_URL = 'http://localhost:5001/api';
         let currentStep = 1;
-        const totalSteps = 6;
+        const totalSteps = 5;
         let debtIndex = 1;
         let currentFormData = null;
         let selectedPlan = null;
 
         // Update progress bar
         function updateProgress() {
-            const progress = (currentStep / totalSteps) * 100;
+            // Ensure progress never exceeds 100%
+            const progress = Math.min((currentStep / totalSteps) * 100, 100);
             document.getElementById('progressFill').style.width = progress + '%';
             document.getElementById('currentStep').textContent = currentStep;
             document.getElementById('totalSteps').textContent = totalSteps;
@@ -754,13 +817,6 @@
                         <label>Insurance coverage amount</label>
                         <input type="number" name="insuranceCoverage" placeholder="0" min="0" step="0.01" value="0">
                     </div>
-                    <div class="form-group">
-                        <label>Payment plan available?</label>
-                        <select name="paymentPlanAvailable">
-                            <option value="false">No</option>
-                            <option value="true">Yes</option>
-                        </select>
-                    </div>
                 </div>
             `;
             
@@ -801,8 +857,7 @@
                     current_payment: parseFloat(item.querySelector('input[name="currentPayment"]').value),
                     provider_name: item.querySelector('input[name="providerName"]').value || null,
                     service_date: item.querySelector('input[name="serviceDate"]').value || null,
-                    insurance_coverage: parseFloat(item.querySelector('input[name="insuranceCoverage"]').value) || 0,
-                    payment_plan_available: item.querySelector('select[name="paymentPlanAvailable"]').value === 'true'
+                    insurance_coverage: parseFloat(item.querySelector('input[name="insuranceCoverage"]').value) || 0
                 };
                 formData.medicalDebts.push(debt);
             });
@@ -854,6 +909,9 @@
                     // Hide form and show trajectory
                     document.getElementById('step3').classList.remove('active');
                     document.getElementById('trajectoryResults').classList.add('active');
+                    // Update progress to show completion
+                    currentStep = totalSteps;
+                    updateProgress();
                 } else {
                     showError(result.error || 'An error occurred during analysis');
                 }
@@ -937,6 +995,9 @@
                     // Hide trajectory and show plans
                     document.getElementById('trajectoryResults').classList.remove('active');
                     document.getElementById('plansResults').classList.add('active');
+                    // Ensure progress shows completion
+                    currentStep = totalSteps;
+                    updateProgress();
                 } else {
                     showError(result.error || 'An error occurred while generating plans');
                 }
@@ -952,40 +1013,72 @@
         function displayPlans(data) {
             const plansGrid = document.getElementById('plansGrid');
             
-            const plans = [
-                { key: 'easy_plan', class: 'easy', emoji: '🐌', name: 'Easy Plan' },
-                { key: 'middle_plan', class: 'middle', emoji: '⚖️', name: 'Balanced Plan' },
-                { key: 'hardcore_plan', class: 'hardcore', emoji: '🚀', name: 'Aggressive Plan' }
-            ];
-            
-            let html = '';
-            
-            plans.forEach(plan => {
-                if (data[plan.key]) {
-                    const planData = data[plan.key];
-                    html += `
-                        <div class="plan-card ${plan.class}" onclick="selectPlanCard('${plan.key}', this)">
-                            <div class="plan-emoji">${plan.emoji}</div>
-                            <div class="plan-name">${plan.name}</div>
-                            <div class="plan-months">${formatMonthsWithYears(planData.estimated_months)}</div>
-                            <div class="plan-months-label">months to payoff</div>
-                            <div class="plan-description">${planData.description}</div>
-                            <div class="plan-metrics">
-                                <div class="plan-metric">
-                                    <div class="plan-metric-value">$${planData.monthly_payment}</div>
-                                    <div class="plan-metric-label">Monthly Payment</div>
-                                </div>
-                                <div class="plan-metric">
-                                    <div class="plan-metric-value">${planData.difficulty}</div>
-                                    <div class="plan-metric-label">Difficulty</div>
-                                </div>
+            if (data.target_plan) {
+                const planData = data.target_plan;
+                const feasibility = planData.feasibility;
+                
+                let html = `
+                    <div class="plan-card target-plan" onclick="selectPlanCard('target_plan', this)">
+                        <div class="plan-emoji">🎯</div>
+                        <div class="plan-name">${planData.name}</div>
+                        <div class="plan-months">${formatMonthsWithYears(planData.actual_months)}</div>
+                        <div class="plan-months-label">months to payoff</div>
+                        <div class="plan-description">${planData.description}</div>
+                        
+                        <div class="plan-metrics">
+                            <div class="plan-metric">
+                                <div class="plan-metric-value">$${planData.monthly_payment.toLocaleString()}</div>
+                                <div class="plan-metric-label">Monthly Payment</div>
+                            </div>
+                            <div class="plan-metric">
+                                <div class="plan-metric-value" style="color: ${feasibility.color}">${feasibility.level}</div>
+                                <div class="plan-metric-label">Feasibility</div>
+                            </div>
+                            <div class="plan-metric">
+                                <div class="plan-metric-value">$${planData.interest_savings.toLocaleString()}</div>
+                                <div class="plan-metric-label">Interest Savings</div>
+                            </div>
+                            <div class="plan-metric">
+                                <div class="plan-metric-value">${feasibility.payment_to_income_ratio}%</div>
+                                <div class="plan-metric-label">Payment/Income Ratio</div>
                             </div>
                         </div>
-                    `;
-                }
-            });
-            
-            plansGrid.innerHTML = html;
+                        
+                        <div class="plan-details">
+                            <h4>Plan Details</h4>
+                            <div class="detail-row">
+                                <span>Target Timeline:</span>
+                                <span>${planData.target_months} months</span>
+                            </div>
+                            <div class="detail-row">
+                                <span>Total Debt:</span>
+                                <span>$${planData.total_debt.toLocaleString()}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span>Current Available Income:</span>
+                                <span>$${planData.current_available_income.toLocaleString()}/month</span>
+                            </div>
+                            ${planData.additional_income_needed > 0 ? `
+                                <div class="detail-row highlight">
+                                    <span>Additional Income Needed:</span>
+                                    <span>$${planData.additional_income_needed.toLocaleString()}/month</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="recommendations">
+                            <h4>Recommendations</h4>
+                            <ul>
+                                ${planData.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+                
+                plansGrid.innerHTML = html;
+            } else {
+                plansGrid.innerHTML = '<div class="error">No plan data available. Please try again.</div>';
+            }
         }
 
         // Select plan card
@@ -1006,7 +1099,13 @@
         // Select plan
         function selectPlan() {
             if (selectedPlan) {
-                alert(`You selected the ${selectedPlan.replace('_', ' ')}! This would typically take you to a detailed plan view or next steps.`);
+                // Show a more detailed confirmation with plan summary
+                const planCard = document.querySelector('.plan-card.selected');
+                const planName = planCard.querySelector('.plan-name').textContent;
+                const monthlyPayment = planCard.querySelector('.plan-metric-value').textContent;
+                const feasibility = planCard.querySelector('.plan-metric-value[style*="color"]').textContent;
+                
+                alert(`You selected the ${planName}!\n\nMonthly Payment: ${monthlyPayment}\nFeasibility: ${feasibility}\n\nThis would typically take you to a detailed implementation guide or next steps.`);
             }
         }
 
@@ -1014,11 +1113,17 @@
         function goBackToForm() {
             document.getElementById('trajectoryResults').classList.remove('active');
             document.getElementById('step3').classList.add('active');
+            // Reset progress to step 3
+            currentStep = 3;
+            updateProgress();
         }
 
         function goBackToTrajectory() {
             document.getElementById('plansResults').classList.remove('active');
             document.getElementById('trajectoryResults').classList.add('active');
+            // Keep progress at completion since we're still in results
+            currentStep = totalSteps;
+            updateProgress();
         }
 
         // Helper function to format months with years

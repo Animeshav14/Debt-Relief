@@ -204,24 +204,15 @@ class MedicalSimulationService:
         }
     
     def generate_payoff_plans(self, simulation_input: MedicalSimulationInput) -> Dict[str, Any]:
-        """Generate three different payoff plans"""
+        """Generate payoff plan based on target payoff time"""
         current_trajectory = self.simulate_current_trajectory(simulation_input)
         
-        # Plan 1: Long-term easier plan (minimum payments + small increase)
-        easy_plan = self._create_easy_plan(simulation_input)
-        
-        # Plan 2: Middle-ground plan (moderate increase in payments)
-        middle_plan = self._create_middle_plan(simulation_input)
-        
-        # Plan 3: Hardcore earning plan (aggressive payments + income increase)
-        hardcore_plan = self._create_hardcore_plan(simulation_input)
+        # Generate plan based on target payoff time
+        target_plan = self._create_target_based_plan(simulation_input)
         
         return {
             'current_trajectory': current_trajectory,
-            'easy_plan': easy_plan,
-            'middle_plan': middle_plan,
-            'hardcore_plan': hardcore_plan,
-            'comparison': self._compare_plans(easy_plan, middle_plan, hardcore_plan, simulation_input)
+            'target_plan': target_plan
         }
     
     def get_current_trajectory_only(self, simulation_input: MedicalSimulationInput) -> Dict[str, Any]:
@@ -351,109 +342,43 @@ class MedicalSimulationService:
             ] if payment_plan_debts else ['No payment plan opportunities available']
         }
     
-    def _create_easy_plan(self, simulation_input: MedicalSimulationInput) -> Dict[str, Any]:
-        """Create easy long-term plan with 30-year cap"""
-        # Start with minimum payments + 20%
-        base_payment = max(simulation_input.total_minimum_payments, simulation_input.total_minimum_payments * 1.2)
+    def _create_target_based_plan(self, simulation_input: MedicalSimulationInput) -> Dict[str, Any]:
+        """Create plan based on user's target payoff time"""
+        target_months = simulation_input.goals.target_payoff_months
         
-        # Calculate honest payoff time with current payment strategy
-        estimated_months = self._estimate_payoff_months(simulation_input, base_payment, max_months=9999)
-        
-        available_income = simulation_input.financial_data.monthly_income - simulation_input.financial_data.monthly_expenses
-        additional_income_needed = max(0, base_payment - available_income)
-        
-        # If we need additional income, adjust recommendations
-        recommendations = [
-            'Set up automatic payments',
-            'Consider payment plans with providers',
-            'Look for insurance coverage opportunities'
-        ]
-        
-        if additional_income_needed > 0:
-            recommendations.extend([
-                f'Find additional income of ${additional_income_needed:.2f} per month',
-                'Consider a part-time job or side hustle',
-                'Cut discretionary spending to free up money'
-            ])
-        
-        return {
-            'name': 'Easy Long-term Plan',
-            'description': 'Slightly increase payments above minimum for manageable progress',
-            'monthly_payment': round(base_payment, 2),
-            'additional_income_needed': round(additional_income_needed, 2),
-            'estimated_months': estimated_months,
-            'total_interest_savings': 0,  # Will be calculated
-            'difficulty': 'Easy',
-            'recommendations': recommendations
-        }
-    
-    def _create_middle_plan(self, simulation_input: MedicalSimulationInput) -> Dict[str, Any]:
-        """Create middle-ground plan"""
-        # Ensure payment is at least minimum payments, then add 50%
-        base_payment = max(simulation_input.total_minimum_payments, simulation_input.total_minimum_payments * 1.5)
-        available_income = simulation_input.financial_data.monthly_income - simulation_input.financial_data.monthly_expenses
-        additional_income_needed = max(0, base_payment - available_income)
-        
-        # If we need additional income, adjust recommendations
-        recommendations = [
-            'Cut discretionary spending by 20%',
-            'Negotiate payment plans with providers',
-            'Apply for financial assistance programs'
-        ]
-        
-        if additional_income_needed > 0:
-            recommendations.extend([
-                f'Find additional income of ${additional_income_needed:.2f} per month',
-                'Consider a part-time job or side hustle',
-                'Look for higher-paying opportunities'
-            ])
-        else:
-            recommendations.append('Consider a part-time job or side hustle for faster payoff')
-        
-        return {
-            'name': 'Balanced Plan',
-            'description': 'Moderate increase in payments with some lifestyle adjustments',
-            'monthly_payment': round(base_payment, 2),
-            'additional_income_needed': round(additional_income_needed, 2),
-            'estimated_months': self._estimate_payoff_months(simulation_input, base_payment),
-            'total_interest_savings': 0,  # Will be calculated
-            'difficulty': 'Moderate',
-            'recommendations': recommendations
-        }
-    
-    def _create_hardcore_plan(self, simulation_input: MedicalSimulationInput) -> Dict[str, Any]:
-        """Create hardcore earning plan"""
-        # Target 2-year payoff, but ensure it's at least minimum payments
-        target_months = 24
-        required_payment = self.calculate_required_earnings(simulation_input, target_months)['required_monthly_payment']
+        # Calculate required payment to meet target
+        required_earnings = self.calculate_required_earnings(simulation_input, target_months)
+        required_payment = required_earnings['required_monthly_payment']
+        additional_income_needed = required_earnings['additional_income_needed']
         
         # Ensure payment meets minimum requirements
         final_payment = max(required_payment, simulation_input.total_minimum_payments)
         
-        available_income = simulation_input.financial_data.monthly_income - simulation_input.financial_data.monthly_expenses
-        additional_income_needed = max(0, final_payment - available_income)
-        
-        # Adjust target months if we had to increase payment above calculated requirement
+        # Recalculate if we had to increase payment above calculated requirement
         if final_payment > required_payment:
-            target_months = self._estimate_payoff_months(simulation_input, final_payment)
+            actual_months = self._estimate_payoff_months(simulation_input, final_payment)
+        else:
+            actual_months = target_months
+        
+        # Generate recommendations based on the plan
+        recommendations = self._generate_recommendations(simulation_input, final_payment, additional_income_needed, target_months)
+        
+        # Calculate interest savings vs current trajectory
+        current_timeline = self.calculate_current_trajectory_timeline(simulation_input)
+        interest_savings = self._calculate_interest_savings(simulation_input, final_payment, current_timeline)
         
         return {
-            'name': 'Hardcore Earning Plan',
-            'description': 'Aggressive payments with significant income increase for fast payoff',
+            'name': f'Target Plan ({target_months} months)',
+            'description': f'Customized plan to pay off debt in {target_months} months',
+            'target_months': target_months,
+            'actual_months': actual_months,
             'monthly_payment': round(final_payment, 2),
             'additional_income_needed': round(additional_income_needed, 2),
-            'estimated_months': target_months,
-            'total_interest_savings': 0,  # Will be calculated
-            'difficulty': 'Hard',
-            'recommendations': [
-                f'Find additional income of ${additional_income_needed:.2f} per month' if additional_income_needed > 0 else 'Current income is sufficient for this plan',
-                'Take on additional work or side hustles',
-                'Cut all non-essential expenses',
-                'Consider debt consolidation loan',
-                'Apply for all available financial assistance',
-                'Negotiate settlements with providers',
-                'Consider selling assets if necessary'
-            ]
+            'current_available_income': round(required_earnings['current_available_income'], 2),
+            'total_debt': round(required_earnings['total_debt'], 2),
+            'interest_savings': round(interest_savings, 2),
+            'recommendations': recommendations,
+            'feasibility': self._assess_feasibility(simulation_input, final_payment, additional_income_needed)
         }
     
     def _estimate_payoff_months(self, simulation_input: MedicalSimulationInput, monthly_payment: float, max_months: int = 9999) -> int:
@@ -481,30 +406,115 @@ class MedicalSimulationService:
             months = total_debt / monthly_payment
             return max(1, int(months))  # No cap - brutally honest
     
-    def _compare_plans(self, easy_plan: Dict, middle_plan: Dict, hardcore_plan: Dict, simulation_input: MedicalSimulationInput) -> Dict[str, Any]:
-        """Compare the three plans"""
-        return {
-            'monthly_payment_range': {
-                'min': easy_plan['monthly_payment'],
-                'max': hardcore_plan['monthly_payment']
-            },
-            'time_range': {
-                'min_months': hardcore_plan['estimated_months'],
-                'max_months': easy_plan['estimated_months']
-            },
-            'difficulty_levels': [easy_plan['difficulty'], middle_plan['difficulty'], hardcore_plan['difficulty']],
-            'recommended_plan': self._recommend_plan(easy_plan, middle_plan, hardcore_plan, simulation_input)
-        }
-    
-    def _recommend_plan(self, easy_plan: Dict, middle_plan: Dict, hardcore_plan: Dict, simulation_input: MedicalSimulationInput) -> str:
-        """Recommend the best plan based on user's situation"""
-        # Simple recommendation logic - can be enhanced
-        if hardcore_plan['additional_income_needed'] < simulation_input.financial_data.monthly_income * 0.3:
-            return 'hardcore_plan'
-        elif middle_plan['additional_income_needed'] < simulation_input.financial_data.monthly_income * 0.15:
-            return 'middle_plan'
+    def _generate_recommendations(self, simulation_input: MedicalSimulationInput, monthly_payment: float, 
+                                 additional_income_needed: float, target_months: int) -> List[str]:
+        """Generate personalized recommendations based on the plan"""
+        recommendations = []
+        
+        # Basic recommendations
+        recommendations.extend([
+            'Set up automatic payments to ensure consistency',
+            'Track your progress monthly to stay motivated',
+            'Consider payment plans with providers for 0% interest'
+        ])
+        
+        # Income-based recommendations
+        if additional_income_needed > 0:
+            recommendations.extend([
+                f'Find additional income of ${additional_income_needed:.2f} per month',
+                'Consider a part-time job or side hustle',
+                'Look for higher-paying opportunities',
+                'Cut discretionary spending to free up money'
+            ])
         else:
-            return 'easy_plan'
+            recommendations.append('Your current income is sufficient for this plan!')
+        
+        # Time-based recommendations
+        if target_months <= 12:
+            recommendations.extend([
+                'This is an aggressive timeline - consider if it\'s sustainable',
+                'Look for ways to increase income significantly',
+                'Consider debt consolidation for lower interest rates'
+            ])
+        elif target_months <= 24:
+            recommendations.extend([
+                'This is a moderate timeline - good balance of speed and feasibility',
+                'Consider negotiating with providers for better terms',
+                'Look for opportunities to increase payments when possible'
+            ])
+        else:
+            recommendations.extend([
+                'This is a comfortable timeline - focus on consistency',
+                'Consider making extra payments when you have extra money',
+                'Look for ways to reduce interest rates through payment plans'
+            ])
+        
+        # Medical debt specific recommendations
+        recommendations.extend([
+            'Review all medical bills for insurance coverage opportunities',
+            'Contact providers to verify insurance claims were processed correctly',
+            'Apply for financial assistance programs if available'
+        ])
+        
+        return recommendations
+    
+    def _calculate_interest_savings(self, simulation_input: MedicalSimulationInput, 
+                                   new_payment: float, current_timeline: Dict) -> float:
+        """Calculate interest savings compared to current trajectory"""
+        # Calculate interest with new payment
+        new_months = self._estimate_payoff_months(simulation_input, new_payment)
+        total_debt = simulation_input.total_debt
+        avg_interest_rate = sum(debt.interest_rate for debt in simulation_input.medical_debts) / len(simulation_input.medical_debts)
+        monthly_rate = avg_interest_rate / 100 / 12
+        
+        if monthly_rate > 0:
+            new_total_interest = total_debt * monthly_rate * new_months
+        else:
+            new_total_interest = 0
+        
+        current_interest = current_timeline.get('total_interest_paid', 0)
+        return max(0, current_interest - new_total_interest)
+    
+    def _assess_feasibility(self, simulation_input: MedicalSimulationInput, 
+                           monthly_payment: float, additional_income_needed: float) -> Dict[str, Any]:
+        """Assess how feasible the plan is"""
+        monthly_income = simulation_input.financial_data.monthly_income
+        monthly_expenses = simulation_input.financial_data.monthly_expenses
+        available_income = monthly_income - monthly_expenses
+        
+        # Calculate feasibility score (0-100)
+        if additional_income_needed <= 0:
+            feasibility_score = 100
+        elif additional_income_needed <= available_income * 0.2:
+            feasibility_score = 80
+        elif additional_income_needed <= available_income * 0.5:
+            feasibility_score = 60
+        elif additional_income_needed <= monthly_income * 0.3:
+            feasibility_score = 40
+        else:
+            feasibility_score = 20
+        
+        # Determine feasibility level
+        if feasibility_score >= 80:
+            level = "Very Feasible"
+            color = "green"
+        elif feasibility_score >= 60:
+            level = "Feasible"
+            color = "yellow"
+        elif feasibility_score >= 40:
+            level = "Challenging"
+            color = "orange"
+        else:
+            level = "Very Challenging"
+            color = "red"
+        
+        return {
+            'score': feasibility_score,
+            'level': level,
+            'color': color,
+            'payment_to_income_ratio': round((monthly_payment / monthly_income) * 100, 1),
+            'additional_income_percentage': round((additional_income_needed / monthly_income) * 100, 1)
+        }
     
     def _calculate_debt_free_date(self, months: int) -> str:
         """Calculate debt-free date"""
